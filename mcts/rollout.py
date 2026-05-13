@@ -6,17 +6,14 @@ def manhattan(a, b):
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
 
-def random_rollout(game, depth=15):
+def random_rollout(game, depth=35):
     positions = []
 
-    initial_distance = manhattan(
-        game.snake[0],
-        game.food
-    )
+    survived = 0
 
     for _ in range(depth):
         if not game.alive:
-            return -100, positions
+            break
 
         possible = []
 
@@ -32,24 +29,36 @@ def random_rollout(game, depth=15):
                 possible.append(action)
 
         if not possible:
-            return -100, positions
+            break
 
         action = random.choice(possible)
 
         game.step(action)
 
         positions.append(game.snake[0])
+        survived += 1
 
-        if game.snake[0] == game.food:
-            return 100, positions
+    reward = evaluate(game, survived)
 
-    final_distance = manhattan(
+    return reward, positions
+
+
+def evaluate(game, survived):
+    if not game.alive:
+        return -150
+
+    reward = 0
+
+    # Food matters
+    reward += game.score * 120
+
+    # Staying alive matters
+    reward += survived * 3
+
+    # Prefer approaching food
+    reward -= manhattan(
         game.snake[0],
         game.food
     )
 
-    reward = initial_distance - final_distance
-
-    reward += game.score * 50
-
-    return reward, positions
+    return reward
